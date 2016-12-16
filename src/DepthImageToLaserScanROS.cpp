@@ -32,6 +32,7 @@
  */
 
 #include <depthimage_to_laserscan/DepthImageToLaserScanROS.h>
+#include <tf/transform_datatypes.h>
 
 using namespace depthimage_to_laserscan;
   
@@ -55,9 +56,23 @@ DepthImageToLaserScanROS::~DepthImageToLaserScanROS(){
 
 void DepthImageToLaserScanROS::depthCb(const sensor_msgs::ImageConstPtr& depth_msg,
 	      const sensor_msgs::CameraInfoConstPtr& info_msg){
+    double tilt_angle;
+    try
+    {
+        tf::StampedTransform transform;
+        listener.lookupTransform(ground_frame_id, camera_frame_id,  
+        ros::Time(0), transform);
+        tf::Matrix3x3 rotm(transform.getRotation());
+        double roll, yaw;
+        rotm.getRPY(roll, tilt_angle, yaw);
+    }
+        catch (tf::TransformException ex){
+        ROS_ERROR_THROTTLE(1.0, "Could not recover camera tilt: %s", ex.what());
+    }
+
   try
   {
-    sensor_msgs::LaserScanPtr scan_msg = dtl_.convert_msg(depth_msg, info_msg);
+    sensor_msgs::LaserScanPtr scan_msg = dtl_.convert_msg(depth_msg, info_msg, tilt_angle);
     pub_.publish(scan_msg);
   }
   catch (std::runtime_error& e)
@@ -88,4 +103,6 @@ void DepthImageToLaserScanROS::reconfigureCb(depthimage_to_laserscan::DepthConfi
     dtl_.set_range_limits(config.range_min, config.range_max);
     dtl_.set_scan_height(config.scan_height);
     dtl_.set_output_frame(config.output_frame_id);
+    camera_frame_id = config.camera_frame_id;
+    ground_frame_id = config.ground_frame_id;
 }

@@ -81,7 +81,7 @@ bool DepthImageToLaserScan::use_point(const float new_value, const float old_val
 }
 
 sensor_msgs::LaserScanPtr DepthImageToLaserScan::convert_msg(const sensor_msgs::ImageConstPtr& depth_msg,
-	      const sensor_msgs::CameraInfoConstPtr& info_msg){
+	      const sensor_msgs::CameraInfoConstPtr& info_msg, const double& tilt_angle){
   // Set camera model
   cam_model_.fromCameraInfo(info_msg);
   
@@ -114,11 +114,16 @@ sensor_msgs::LaserScanPtr DepthImageToLaserScan::convert_msg(const sensor_msgs::
   scan_msg->scan_time = scan_time_;
   scan_msg->range_min = range_min_;
   scan_msg->range_max = range_max_;
+
+  // account for camera tilt
+  int tilt_offset = cam_model_.fy() * tan(tilt_angle);
   
-  // Check scan_height vs image_height
-  if(scan_height_/2 > cam_model_.cy() || scan_height_/2 > depth_msg->height - cam_model_.cy()){
+  // Check scan_height vs image_height vs tilt offset
+  if(scan_height_/2 > cam_model_.cy() - tilt_offset || 
+          scan_height_/2 > depth_msg->height - tilt_offset - cam_model_.cy()){
     std::stringstream ss;
-    ss << "scan_height ( " << scan_height_ << " pixels) is too large for the image height.";
+    ss << "scan_height ( " << scan_height_ << " pixels) and tilt_offset ( " 
+        << tilt_offset << " pixels) too large for the image height.";
     throw std::runtime_error(ss.str());
   }
 
@@ -128,11 +133,11 @@ sensor_msgs::LaserScanPtr DepthImageToLaserScan::convert_msg(const sensor_msgs::
   
   if (depth_msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1)
   {
-    convert<uint16_t>(depth_msg, cam_model_, scan_msg, scan_height_);
+    convert<uint16_t>(depth_msg, cam_model_, scan_msg, scan_height_, tilt_offset);
   }
   else if (depth_msg->encoding == sensor_msgs::image_encodings::TYPE_32FC1)
   {
-    convert<float>(depth_msg, cam_model_, scan_msg, scan_height_);
+    convert<float>(depth_msg, cam_model_, scan_msg, scan_height_, tilt_offset);
   }
   else
   {

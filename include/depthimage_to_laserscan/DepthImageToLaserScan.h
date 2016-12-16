@@ -64,7 +64,7 @@ namespace depthimage_to_laserscan
      * 
      */
     sensor_msgs::LaserScanPtr convert_msg(const sensor_msgs::ImageConstPtr& depth_msg,
-					   const sensor_msgs::CameraInfoConstPtr& info_msg);
+					   const sensor_msgs::CameraInfoConstPtr& info_msg, const double& tilt_angle);
     
     /**
      * Sets the scan time parameter.
@@ -101,7 +101,7 @@ namespace depthimage_to_laserscan
      * 
      */
     void set_scan_height(const int scan_height);
-    
+
     /**
      * Sets the frame_id for the output LaserScan.
      * 
@@ -167,8 +167,7 @@ namespace depthimage_to_laserscan
     * 
     */
     template<typename T>
-    void convert(const sensor_msgs::ImageConstPtr& depth_msg, const image_geometry::PinholeCameraModel& cam_model, 
-		 const sensor_msgs::LaserScanPtr& scan_msg, const int& scan_height) const{
+    void convert(const sensor_msgs::ImageConstPtr& depth_msg, const image_geometry::PinholeCameraModel& cam_model, const sensor_msgs::LaserScanPtr& scan_msg, const int& scan_height, const int& tilt_offset) const{
       // Use correct principal point from calibration
       float center_x = cam_model.cx();
       float center_y = cam_model.cy();
@@ -181,10 +180,10 @@ namespace depthimage_to_laserscan
       const T* depth_row = reinterpret_cast<const T*>(&depth_msg->data[0]);
       int row_step = depth_msg->step / sizeof(T);
 
-      int offset = (int)(cam_model.cy()-scan_height/2);
-      depth_row += offset*row_step; // Offset to center of image
+      int row_offset = (int)(cam_model.cy()+tilt_offset-scan_height/2); // +tilt_offset since z points down
+      depth_row += row_offset*row_step; // Offset to center of image
 
-      for(int v = offset; v < offset+scan_height_; v++, depth_row += row_step){
+      for(int v = row_offset; v < row_offset+scan_height_; v++, depth_row += row_step){
 		for (int u = 0; u < (int)depth_msg->width; u++) // Loop over each pixel in row
 		{	
 		  T depth = depth_row[u];
