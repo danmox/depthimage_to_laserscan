@@ -180,7 +180,7 @@ namespace depthimage_to_laserscan
       const T* depth_row = reinterpret_cast<const T*>(&depth_msg->data[0]);
       int row_step = depth_msg->step / sizeof(T);
 
-      int row_offset = (int)(cam_model.cy()+tilt_offset-scan_height/2); // +tilt_offset since z points down
+      int row_offset = (int)(cam_model.cy()-tilt_offset-scan_height/2); 
       depth_row += row_offset*row_step; // Offset to center of image
 
       for(int v = row_offset; v < row_offset+scan_height_; v++, depth_row += row_step){
