@@ -36,7 +36,9 @@
 
 using namespace depthimage_to_laserscan;
   
-DepthImageToLaserScanROS::DepthImageToLaserScanROS(ros::NodeHandle& n, ros::NodeHandle& pnh):pnh_(pnh), it_(n), srv_(pnh) {
+DepthImageToLaserScanROS::DepthImageToLaserScanROS(ros::NodeHandle& n, ros::NodeHandle& pnh)
+    : pnh_(pnh), it_(n), srv_(pnh) 
+{
   boost::mutex::scoped_lock lock(connect_mutex_);
   
   // Dynamic Reconfigure
@@ -45,7 +47,9 @@ DepthImageToLaserScanROS::DepthImageToLaserScanROS(ros::NodeHandle& n, ros::Node
   srv_.setCallback(f);
   
   // Lazy subscription to depth image topic
-  pub_ = n.advertise<sensor_msgs::LaserScan>("scan", 10, boost::bind(&DepthImageToLaserScanROS::connectCb, this, _1), boost::bind(&DepthImageToLaserScanROS::disconnectCb, this, _1));
+  pub_ = n.advertise<sensor_msgs::LaserScan>("scan", 10, 
+          boost::bind(&DepthImageToLaserScanROS::connectCb, this, _1), 
+          boost::bind(&DepthImageToLaserScanROS::disconnectCb, this, _1));
 }
 
 DepthImageToLaserScanROS::~DepthImageToLaserScanROS(){
@@ -105,4 +109,5 @@ void DepthImageToLaserScanROS::reconfigureCb(depthimage_to_laserscan::DepthConfi
     dtl_.set_output_frame(config.output_frame_id);
     camera_frame_id = config.camera_frame_id;
     ground_frame_id = config.ground_frame_id;
+    dtl_.load_model(config.clams_depth_model);
 }

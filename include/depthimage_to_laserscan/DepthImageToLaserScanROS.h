@@ -99,7 +99,7 @@ namespace depthimage_to_laserscan
     image_transport::CameraSubscriber sub_; ///< Subscriber for image_transport
     ros::Publisher pub_; ///< Publisher for output LaserScan messages
     dynamic_reconfigure::Server<depthimage_to_laserscan::DepthConfig> srv_; ///< Dynamic reconfigure server
-    tf::TransformListener listener; ///< TF listener for when the camera is irregularly positioned and a depth image row not the center is desired
+    tf::TransformListener listener; ///< TF listener for when the camera is irregularly positioned and a depth image row other than the center is desired
     
     depthimage_to_laserscan::DepthImageToLaserScan dtl_; ///< Instance of the DepthImageToLaserScan conversion class.
     std::string camera_frame_id, ground_frame_id; ///< The transformation between these two frames gives the tilt of the camera relative to the world ground plane

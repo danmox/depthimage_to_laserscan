@@ -145,7 +145,13 @@ sensor_msgs::LaserScanPtr DepthImageToLaserScan::convert_msg(const sensor_msgs::
     ss << "Depth image has unsupported encoding: " << depth_msg->encoding;
     throw std::runtime_error(ss.str());
   }
-  
+
+  // undistort laser scan using discrete depth distortion model
+  if (discrete_depth_model.isValid())
+  {
+      discrete_depth_model.undistort(scan_msg, cam_model_.cy()-tilt_offset);
+  }
+
   return scan_msg;
 }
 
@@ -164,4 +170,22 @@ void DepthImageToLaserScan::set_scan_height(const int scan_height){
 
 void DepthImageToLaserScan::set_output_frame(const std::string output_frame_id){
   output_frame_id_ = output_frame_id;
+}
+
+void DepthImageToLaserScan::load_model(const std::string model_file)
+{
+    static std::string saved_model;
+
+    if (saved_model.compare(model_file) == 0 || model_file.size() == 0)
+        return;
+    
+    discrete_depth_model.load(model_file);
+    if (!discrete_depth_model.isValid())
+    {
+        ROS_FATAL("DepthImageToLaserScan: discrete distortion model invalid.");
+        exit(EXIT_FAILURE);
+    }
+    saved_model = model_file;
+    ROS_INFO("DepthImageToLaserScan: using distortion model from %s.", 
+            model_file.c_str());
 }

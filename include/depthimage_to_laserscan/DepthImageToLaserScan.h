@@ -34,10 +34,12 @@
 #ifndef DEPTH_IMAGE_TO_LASERSCAN
 #define DEPTH_IMAGE_TO_LASERSCAN
 
+#include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/image_encodings.h>
 #include <image_geometry/pinhole_camera_model.h>
+#include <clams/discrete_depth_distortion_model.h>
 #include <depthimage_to_laserscan/depth_traits.h>
 #include <sstream>
 #include <limits.h>
@@ -112,6 +114,8 @@ namespace depthimage_to_laserscan
      * 
      */
     void set_output_frame(const std::string output_frame_id);
+
+    void load_model(const std::string model);
 
   private:
     /**
@@ -210,6 +214,7 @@ namespace depthimage_to_laserscan
     }
     
     image_geometry::PinholeCameraModel cam_model_; ///< image_geometry helper class for managing sensor_msgs/CameraInfo messages.
+    clams::DiscreteDepthDistortionModel discrete_depth_model;
     
     float scan_time_; ///< Stores the time between scans.
     float range_min_; ///< Stores the current minimum range to use.
